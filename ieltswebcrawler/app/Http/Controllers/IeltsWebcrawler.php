@@ -60,6 +60,26 @@ class IeltsWebcrawler extends Controller
                                  "http://www.webcrawler.com/"                                       
                                 );
                                 
+     private $free_proxy_ips = array("23.23.77.156:80",
+                                     "54.229.121.10:80",
+                                     "213.209.107.182:80",
+                                     "64.254.28.255:80",
+                                     "108.229.33.83:80",
+                                     "92.243.13.92:80",
+                                     "176.62.79.39:80",
+                                     "87.204.16.157:80",
+                                     "5.56.61.186:80",
+                                     "123.30.75.116:80",
+                                     "123.231.229.34:8080", 
+                                     "202.70.85.244:80",
+                                     "184.105.220.24:80",
+                                     "208.109.104.59:80",
+                                     "74.116.156.133:80",
+                                     "117.18.79.56:80",
+                                     "177.241.42.194:10000",
+                                     "51.254.15.109:7808" 
+                                    );                           
+                                
                                 
                                                            
     //
@@ -74,6 +94,8 @@ class IeltsWebcrawler extends Controller
         var_dump($curlInfo->ietls_date);
         $curl_count = $curlInfo->curl_count;
         
+        $proxy = $this->free_proxy_ips[array_rand($this->free_proxy_ips)];
+        
         //** getting random user agent
         $size_of_user_agents = sizeof($this->user_agents) - 1;        
         $rand_user_agent_key = mt_rand(0,$size_of_user_agents );        
@@ -86,6 +108,8 @@ class IeltsWebcrawler extends Controller
         
         //initilizing curl
         $curl = curl_init();
+        curl_setopt($curl,CURLOPT_HTTPPROXYTUNNEL, 1);
+        
         //url to make curl request
         //$url = 'https://ielts.britishcouncil.org/CountryExamSearch.aspx';
         $url = 'https://ielts.britishcouncil.org/nepal';     
@@ -93,7 +117,8 @@ class IeltsWebcrawler extends Controller
         if($curl_count == 1)
         {
            $curlInfo->curl_count = 1+1;
-           curl_setopt($curl,CURLOPT_USERAGENT, $agent); 
+           curl_setopt($curl,CURLOPT_USERAGENT, $agent);
+           curl_setopt($curl, CURLOPT_PROXY, $proxy); 
         }
         else if($curl_count == 2)
         {
@@ -102,16 +127,22 @@ class IeltsWebcrawler extends Controller
         }
         else if($curl_count ==3)
         {
-           $curlInfo->curl_count = 3+1;           
+           $curlInfo->curl_count = 3+1;
+           curl_setopt($curl,CURLOPT_USERAGENT, $agent);
+           curl_setopt($curl, CURLOPT_PROXY, $proxy);           
         }
         else if($curl_count ==4)
         {
            $curlInfo->curl_count = 4+1;
+           curl_setopt($curl,CURLOPT_USERAGENT, $agent);
+           curl_setopt($curl, CURLOPT_PROXY, $proxy);
                         
         }
         else if($curl_count ==5)
         {
            $curlInfo->curl_count = 1;
+           curl_setopt($curl,CURLOPT_USERAGENT, $agent);
+           curl_setopt($curl, CURLOPT_PROXY, $proxy);
            
         }
 
@@ -131,7 +162,7 @@ class IeltsWebcrawler extends Controller
         $text_between = substr($result, $firts_sel_tag, $second_sel_tag);
         
         print_r($text_between);
-        
+        print_r($proxy);
         if (strpos($result,'There currently are no test dates available') !== false) {
             echo "Not Available";
         }
