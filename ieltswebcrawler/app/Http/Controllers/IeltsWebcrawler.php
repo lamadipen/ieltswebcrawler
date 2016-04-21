@@ -7,8 +7,8 @@ use Illuminate\Http\Request;
 use App\Http\Requests;
 use App\Http\Controllers\Controller;
 
+use App\GCMUser;
 use App\IeltsWebcrawlerModel;
-
 class IeltsWebcrawler extends Controller
 {
     private $user_agents = array("Opera/9.80 (X11; Linux i686; Ubuntu/14.10) Presto/2.12.388 Version/12.16",
@@ -78,21 +78,26 @@ class IeltsWebcrawler extends Controller
                                      "117.18.79.56:80",
                                      "177.241.42.194:10000",
                                      "51.254.15.109:7808" 
-                                    );                           
-                                
-                                
+                                    );                                                                                           
                                                            
-    //
+    //crul the ielts sites
     public function index()
-    {
-        
+    {                        
         $curlInfo = IeltsWebcrawlerModel::findOrFail(1);
-        
-        var_dump($curlInfo->id);
-        var_dump($curlInfo->curl_date);
-        var_dump($curlInfo->curl_count);
-        var_dump($curlInfo->ietls_date);
+        //$curlInfo =0;
+        if(empty($curlInfo))
+        {
+            echo  "hello";
+        }
+        var_dump($curlInfo);
+        exit();
+        //var_dump($curlInfo->id);
+        //var_dump($curlInfo->curl_date);
+       // var_dump($curlInfo->curl_count);
+       // var_dump($curlInfo->ietls_date);
         $curl_count = $curlInfo->curl_count;
+        
+   
         
         $proxy = $this->free_proxy_ips[array_rand($this->free_proxy_ips)];
         
@@ -153,25 +158,110 @@ class IeltsWebcrawler extends Controller
         curl_setopt($curl,CURLOPT_URL, $url);
         //curl_setopt($curl,CURLOPT_POST, sizeof($user));
         //curl_setopt($curl,CURLOPT_POSTFIELDS, $user);         
-        $result = @curl_exec($curl);
+        $result = curl_exec($curl);
         curl_close($curl);
-    
+        
+        //echo $result;
+         
         $firts_sel_tag = strpos($result,'ctl00$ContentPlaceHolder1$ddlDateMonthYear');
         $second_sel_tag = strpos($result,'ctl00$ContentPlaceHolder1$ddlTownCityVenue');
   
         $text_between = substr($result, $firts_sel_tag, $second_sel_tag);
-        
-        print_r($text_between);
-        print_r($proxy);
+        echo $text_between;
+       // print_r($text_between);
+        //print_r($proxy);
         if (strpos($result,'There currently are no test dates available') !== false) {
             echo "Not Available";
         }
         else
         {
-            echo "<label color='green'>Available<label>". $agent;
+            echo "<label color='green'>Available<label>";
         }
         
         //$curlInfo->save();
     }
+    
+    public function store(Request $request)
+	{
+		$gcm_user = new GCMUser();
+        $gcm_user->name = $request->name;
+        $gcm_user->email = $request->email;
+        $gcm_user->mobile = $request->mobile;
+        $gcm_user->gcm_regid = $request->regId;    
+        
+        $result = $gcm_user->save();
+        
+        echo json_encode($result);
+	}
+        
+    /**
+     * Sending Push Notification    
+     */    
+    public function send_notification($registatoin_ids=null, $message=null) {
+        
+        $google_api_key = \Config::get('constants.GOOGLE_API_KEY');
+        
+        // Set POST variables
+        $url = 'https://android.googleapis.com/gcm/send';
+ 
+        $fields = array(
+            'registration_ids' => $registatoin_ids,
+            'data' => $message,
+        );
+ 
+        $headers = array(
+            'Authorization: key=' . $google_api_key,
+            'Content-Type: application/json'
+        );
+        // Open connection
+        $ch = curl_init();
+ 
+        // Set the url, number of POST vars, POST data
+        curl_setopt($ch, CURLOPT_URL, $url);
+ 
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+ 
+        // Disabling SSL Certificate support temporarly
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+ 
+        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($fields));
+ 
+        // Execute post
+        $result = curl_exec($ch);
+        if ($result === FALSE) {
+            die('Curl failed: ' . curl_error($ch));
+        } 
+        // Close connection
+        curl_close($ch);   
+         echo $result;
+    }
+ 
+    function test()
+    {    
+       $this->notify_all();
+       
+       exit();
+       $registatoin_ids = array("dCB-gYX_iMs:APA91bFyNh8QIHLZo4FnyPLm6sHv-VV19h6CJHrv_8PvwwjnT9X_6zkNYUS1exQJ_zua3R65gOjipphYmkr3UbSD_N3IAy-SiSUORpyNjTzgXLmxjr8pBcZn4zs8fD6ULvpOKLdbdq5Y"); 
+       $message = array("price" =>'This is laravel');
+       
+       $this->send_notification($registatoin_ids,$message);
+    }
+    
+    function notify_all($message=null)
+    {        
+        $message = array("price" =>"$message");
+        
+        $users_all = GCMUser::all();
+        
+        foreach($users_all as $user)
+        {
+            $token = $user->gcm_regid; 
+            $registatoin_ids = array("$token");  
+            $this->send_notification($registatoin_ids,$message);        
+        }        
+    }
+    
     
 }

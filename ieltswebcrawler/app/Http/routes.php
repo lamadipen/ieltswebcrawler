@@ -10,11 +10,21 @@
 | and give it the controller to call when that URI is requested.
 |
 */
+define('GOOGLE_API_KEY','AIzaSyBQqP-t72lNHi7Dy1Or3zUDO1gENy6JBG4');
 
 Route::get('/', function () {
     return view('welcome');
 });
+
 Route::get('home', 'IeltsWebcrawler@index');
+Route::get('test', 'IeltsWebcrawler@test');
+
+//Route::resource('ielts','IeltsWebcrawler');
+/**
+Route::resource('ielts', 'IeltsWebcrawler', ['names' => [
+    'store' => 'register'
+]]);
+**/
 /*
 |--------------------------------------------------------------------------
 | Application Routes
@@ -25,7 +35,6 @@ Route::get('home', 'IeltsWebcrawler@index');
 | kernel and includes session state, CSRF protection, and more.
 |
 */
-
 Route::group(['middleware' => ['web']], function () {
     //
 });
